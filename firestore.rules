@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // === WORKOUT COLLECTION ===
+    // Hanya user yang terautentikasi yang bisa CRUD workoutnya sendiri.
+    match /workouts/{workoutId} {
+      // READ: Hanya pemilik workout yang bisa membaca
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      // CREATE: User harus login dan userId di dokumen harus sama dengan uid user
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      // UPDATE: Hanya pemilik yang bisa mengubah, dan tidak boleh ganti userId
+      allow update: if request.auth != null
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid;
+
+      // DELETE: Hanya pemilik yang bisa menghapus
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // === USER PROFILES (opsional, untuk masa depan) ===
+    match /users/{userId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+
+    // Tolak semua akses lain secara default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

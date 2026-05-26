@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "568936337287",
-    "project_id": "fitlog-3043d",
-    "storage_bucket": "fitlog-3043d.firebasestorage.app"
+    "project_number": "250398653129",
+    "project_id": "fitlog-gathan",
+    "storage_bucket": "fitlog-gathan.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:568936337287:android:cd4dde07ab467b5a7c8d22",
+        "mobilesdk_app_id": "1:250398653129:android:4fbb5c5961fcb1b4a2ab18",
         "android_client_info": {
           "package_name": "com.example.fitlog_app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "568936337287-2oija1hvc29v5tj8n55242gb2am0dr88.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDXQA6evD2duP1gBAojZvtUB-GX0kCv_iI"
+          "current_key": "AIzaSyCeL9STCDtgsc6AfaWCHtS8JqXUstyyI7Y"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "568936337287-2oija1hvc29v5tj8n55242gb2am0dr88.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
