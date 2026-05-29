@@ -1,1 +1,24 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"fitlog-3043d","appId":"1:568936337287:android:cd4dde07ab467b5a7c8d22","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"fitlog-3043d","configurations":{"android":"1:568936337287:android:cd4dde07ab467b5a7c8d22","ios":"1:568936337287:ios:1f235b2ebdf24e1a7c8d22","macos":"1:568936337287:ios:1f235b2ebdf24e1a7c8d22","web":"1:568936337287:web:1156106649a564267c8d22","windows":"1:568936337287:web:b6c40177b11e6d247c8d22"}}}}}}
+{
+  "firestore": {
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "fitlog-gathan",
+          "appId": "1:250398653129:android:4fbb5c5961fcb1b4a2ab18",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fitlog-gathan",
+          "configurations": {
+            "android": "1:250398653129:android:4fbb5c5961fcb1b4a2ab18"
+          }
+        }
+      }
+    }
+  }
+}

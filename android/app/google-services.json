@@ -12,7 +12,20 @@
           "package_name": "com.example.fitlog_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "250398653129-afojj72ljp48nvuusheuintq1hqlm701.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fitlog_app",
+            "certificate_hash": "6dbad43d88b6ff14e1f302c39159a3cd15ef0423"
+          }
+        },
+        {
+          "client_id": "250398653129-rrnt53l62i5517caqfu9evqci4j3qcto.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCeL9STCDtgsc6AfaWCHtS8JqXUstyyI7Y"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "250398653129-rrnt53l62i5517caqfu9evqci4j3qcto.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "250398653129-85qo6aoorn1rp9v1s7kbkm7h2eb1ofpo.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fitlogApp"
+              }
+            }
+          ]
         }
       }
     }

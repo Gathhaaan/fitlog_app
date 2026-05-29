@@ -35,45 +35,38 @@ class AuthRepository {
   /// Login menggunakan akun Google (google_sign_in v7.x API).
   ///
   /// Alur:
-  /// 1. signIn() — buka dialog pilih akun Google
-  /// 2. Ambil accessToken dan idToken dari authentication
+  /// 1. authenticate() — buka dialog pilih akun Google
+  /// 2. Ambil idToken dari authentication
   /// 3. Gunakan credential untuk login ke Firebase
-  ///
-  /// Jika user sudah punya akun Firebase → login
-  /// Jika belum punya → otomatis dibuatkan akun baru
   Future<UserCredential> signInWithGoogle() async {
-    final GoogleSignIn googleSignIn = GoogleSignIn();
+    try {
+      // Tampilkan dialog pilih akun Google
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
 
-    // Tampilkan dialog pilih akun Google
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      // Ambil token autentikasi
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
-    if (googleUser == null) {
-      // User membatalkan dialog
+      // Buat credential Firebase dari token Google (v7 hanya butuh idToken untuk default Firebase)
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      return await _auth.signInWithCredential(credential);
+    } catch (e) {
+      // User membatalkan dialog atau terjadi error
       throw FirebaseAuthException(
-        code: 'sign-in-cancelled',
-        message: 'Login dibatalkan oleh pengguna.',
+        code: 'sign-in-failed',
+        message: 'Login Google dibatalkan atau gagal: $e',
       );
     }
-
-    // Ambil token autentikasi
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-
-    // Buat credential Firebase dari token Google
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    return _auth.signInWithCredential(credential);
   }
 
   /// Logout dari semua provider (Google + Firebase).
   Future<void> signOut() async {
     try {
-      await GoogleSignIn().signOut();
+      await GoogleSignIn.instance.signOut();
     } catch (_) {
-      // Abaikan error Google Sign-Out (mungkin belum login via Google)
+      // Abaikan error Google Sign-Out
     }
     await _auth.signOut();
   }

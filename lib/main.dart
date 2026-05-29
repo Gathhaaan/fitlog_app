@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'firebase_options.dart';
 import 'app/theme.dart';
 import 'screens/splash_screen.dart';
@@ -11,9 +12,21 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inisialisasi Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint("Firebase init failed: $e. Pastikan sudah menjalankan flutterfire configure.");
+  }
+
+  // Inisialisasi Google Sign-In (v7.x API requirement)
+  try {
+    await GoogleSignIn.instance.initialize();
+  } catch (e) {
+    debugPrint("GoogleSignIn init failed: $e");
+  }
+
 
   // Inisialisasi Hive untuk offline caching
   await Hive.initFlutter();
