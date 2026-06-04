@@ -7,6 +7,7 @@ import 'workout_detail_screen.dart';
 import 'add_workout_screen.dart';
 import '../../widgets/shimmer_loading.dart';
 import '../../widgets/lottie_empty_state.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 /// Layar daftar semua workout milik user.
 ///
@@ -25,6 +26,16 @@ class WorkoutListScreen extends ConsumerStatefulWidget {
 
 class _WorkoutListScreenState extends ConsumerState<WorkoutListScreen> {
   String? _selectedFilter;
+  String _searchQuery = '';
+  String _sortOrder = 'date_desc'; // 'date_desc', 'date_asc', 'weight_desc'
+
+  @override
+  void initState() {
+    super.initState();
+    // Load preferensi dari Hive
+    final box = Hive.box('settings');
+    _sortOrder = box.get('workout_sort_order', defaultValue: 'date_desc');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +51,7 @@ class _WorkoutListScreenState extends ConsumerState<WorkoutListScreen> {
           PopupMenuButton<String?>(
             icon: const Icon(Icons.filter_list, color: AppColors.textPrimary),
             color: AppColors.surface,
+            tooltip: 'Filter Kategori',
             onSelected: (value) => setState(() => _selectedFilter = value),
             itemBuilder: (_) => [
               const PopupMenuItem(
@@ -58,42 +70,103 @@ class _WorkoutListScreenState extends ConsumerState<WorkoutListScreen> {
               ),
             ],
           ),
+          // Tombol urutkan
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort, color: AppColors.textPrimary),
+            color: AppColors.surface,
+            tooltip: 'Urutkan',
+            onSelected: (value) {
+              setState(() => _sortOrder = value);
+              // Simpan preferensi pengguna dengan Hive
+              Hive.box('settings').put('workout_sort_order', value);
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'date_desc',
+                child: Text('Terbaru', style: TextStyle(color: AppColors.textPrimary)),
+              ),
+              PopupMenuItem(
+                value: 'date_asc',
+                child: Text('Terlama', style: TextStyle(color: AppColors.textPrimary)),
+              ),
+              PopupMenuItem(
+                value: 'weight_desc',
+                child: Text('Beban Terberat', style: TextStyle(color: AppColors.textPrimary)),
+              ),
+            ],
+          ),
         ],
       ),
       body: workoutAsync.when(
         data: (workouts) {
-          // Terapkan filter jika dipilih
-          final filtered = _selectedFilter != null
-              ? workouts
-                  .where((w) => w.category == _selectedFilter)
-                  .toList()
-              : workouts;
+          // Terapkan filter kategori & pencarian nama
+          var filtered = workouts.where((w) {
+            final matchesFilter = _selectedFilter == null || w.category == _selectedFilter;
+            final matchesSearch = w.name.toLowerCase().contains(_searchQuery.toLowerCase());
+            return matchesFilter && matchesSearch;
+          }).toList();
 
-          if (filtered.isEmpty) {
-            return _buildEmptyState();
-          }
+          // Terapkan urutan (sorting)
+          filtered.sort((a, b) {
+            if (_sortOrder == 'date_asc') {
+              return a.createdAt.compareTo(b.createdAt);
+            } else if (_sortOrder == 'weight_desc') {
+              return (b.weight ?? 0).compareTo(a.weight ?? 0);
+            }
+            // default date_desc
+            return b.createdAt.compareTo(a.createdAt);
+          });
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: filtered.length,
-            itemBuilder: (context, index) {
-              // Animasi stagger: setiap item muncul dengan delay
-              return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: Duration(milliseconds: 400 + (index * 100)),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, 30 * (1 - value)),
-                      child: child,
-                    ),
-                  );
-                },
-                child: _buildWorkoutCard(context, filtered[index]),
-              );
-            },
+          return Column(
+            children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: TextField(
+                  decoration: AppDecorations.inputDecoration('Cari Latihan...', Icons.search).copyWith(
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              Expanded(
+                child: filtered.isEmpty
+                    ? _buildEmptyState()
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          // Dummy delay untuk visual pull-to-refresh
+                          // Data dari Firestore secara otomatis real-time via Stream
+                          await Future.delayed(const Duration(milliseconds: 800));
+                        },
+                        color: AppColors.primary,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            // Animasi stagger: setiap item muncul dengan delay
+                            return TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0, end: 1),
+                              duration: Duration(milliseconds: 400 + (index * 100)),
+                              curve: Curves.easeOutCubic,
+                              builder: (context, value, child) {
+                                return Opacity(
+                                  opacity: value,
+                                  child: Transform.translate(
+                                    offset: Offset(0, 30 * (1 - value)),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: _buildWorkoutCard(context, filtered[index]),
+                            );
+                          },
+                        ),
+                      ),
+              ),
+            ],
           );
         },
         loading: () => Padding(
@@ -194,7 +267,7 @@ class _WorkoutListScreenState extends ConsumerState<WorkoutListScreen> {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => WorkoutDetailScreen(workout: workout),
+            builder: (_) => WorkoutDetailScreen(workout: workout, heroTagPrefix: 'list-'),
           ),
         ),
         child: Container(
@@ -205,7 +278,7 @@ class _WorkoutListScreenState extends ConsumerState<WorkoutListScreen> {
             children: [
               // Ikon kategori dengan Hero animation
               Hero(
-                tag: 'workout-icon-${workout.id}',
+                tag: 'list-workout-icon-${workout.id}',
                 child: Container(
                   width: 48,
                   height: 48,
@@ -227,7 +300,7 @@ class _WorkoutListScreenState extends ConsumerState<WorkoutListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Hero(
-                      tag: 'workout-name-${workout.id}',
+                      tag: 'list-workout-name-${workout.id}',
                       child: Material(
                         color: Colors.transparent,
                         child: Text(

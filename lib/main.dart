@@ -20,17 +20,15 @@ void main() async {
     debugPrint("Firebase init failed: $e. Pastikan sudah menjalankan flutterfire configure.");
   }
 
-  // Inisialisasi Google Sign-In (v7.x API requirement)
-  try {
-    await GoogleSignIn.instance.initialize();
-  } catch (e) {
+  // Inisialisasi Google Sign-In di background — tidak perlu ditunggu
+  // agar tidak memblokir startup dan menyebabkan ANR
+  GoogleSignIn.instance.initialize().catchError((e) {
     debugPrint("GoogleSignIn init failed: $e");
-  }
+  });
 
-
-  // Inisialisasi Hive untuk offline caching
+  // Inisialisasi Hive
   await Hive.initFlutter();
-  await Hive.openBox('workout_cache');
+  await Hive.openBox('settings');
 
   // Inisialisasi format tanggal Indonesia
   await initializeDateFormatting('id_ID', null);
@@ -52,6 +50,13 @@ class FitLogApp extends ConsumerWidget {
       title: 'FitLog - Catat Perjalanan Fitnessmu',
       debugShowCheckedModeBanner: false,
       theme: appTheme(), // Tema terpusat dari lib/app/theme.dart
+      builder: (context, child) {
+        // Matikan efek stretch overscroll secara global
+        return ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+          child: child!,
+        );
+      },
       home: const SplashScreen(),
     );
   }

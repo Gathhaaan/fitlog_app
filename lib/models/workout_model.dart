@@ -73,6 +73,36 @@ class Workout {
         'userId': userId,
       };
 
+  /// Konversi dari JSON (dari Hive) ke objek Workout.
+  factory Workout.fromJson(Map<String, dynamic> json) {
+    return Workout(
+      id: json['id'],
+      name: json['name'] ?? '',
+      category: json['category'] ?? '',
+      sets: json['sets'] ?? 0,
+      reps: json['reps'] ?? 0,
+      weight: (json['weight'] as num?)?.toDouble(),
+      notes: json['notes'],
+      imageUrl: json['imageUrl'],
+      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      userId: json['userId'] ?? '',
+    );
+  }
+
+  /// Konversi dari objek Workout ke JSON stringifiable map (untuk Hive).
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'category': category,
+        'sets': sets,
+        'reps': reps,
+        'weight': weight,
+        'notes': notes,
+        'imageUrl': imageUrl,
+        'createdAt': createdAt.toIso8601String(),
+        'userId': userId,
+      };
+
   /// Membuat salinan Workout dengan beberapa field yang diubah.
   Workout copyWith({
     String? id,

@@ -45,6 +45,24 @@ class StorageRepository {
     }
   }
 
+  /// Upload foto progres fisik ke Firebase Storage.
+  ///
+  /// File disimpan di path: `progress/{userId}/{timestamp}.jpg`
+  /// Mengembalikan URL download.
+  Future<String> uploadProgressPhoto(String userId, File imageFile) async {
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final ref = _storage.ref('progress/$userId/$timestamp.jpg');
+      await ref.putFile(
+        imageFile,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      return await ref.getDownloadURL();
+    } on FirebaseException catch (e) {
+      throw Exception('Gagal mengupload foto progres: ${e.message}');
+    }
+  }
+
   /// Hapus file dari Firebase Storage berdasarkan URL-nya.
   Future<void> deleteFile(String fileUrl) async {
     try {

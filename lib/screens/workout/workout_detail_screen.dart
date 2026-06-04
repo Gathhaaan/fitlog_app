@@ -15,7 +15,9 @@ import '../../providers/workout_provider.dart';
 class WorkoutDetailScreen extends ConsumerStatefulWidget {
   final Workout workout;
 
-  const WorkoutDetailScreen({super.key, required this.workout});
+  final String heroTagPrefix;
+
+  const WorkoutDetailScreen({super.key, required this.workout, this.heroTagPrefix = ''});
 
   @override
   ConsumerState<WorkoutDetailScreen> createState() =>
@@ -337,7 +339,7 @@ class _WorkoutDetailScreenState extends ConsumerState<WorkoutDetailScreen> {
             Row(
               children: [
                 Hero(
-                  tag: 'workout-icon-${_workout.id}',
+                  tag: '${widget.heroTagPrefix}workout-icon-${_workout.id}',
                   child: Container(
                     width: 64,
                     height: 64,
@@ -358,7 +360,7 @@ class _WorkoutDetailScreenState extends ConsumerState<WorkoutDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Hero(
-                        tag: 'workout-name-${_workout.id}',
+                        tag: '${widget.heroTagPrefix}workout-name-${_workout.id}',
                         child: Material(
                           color: Colors.transparent,
                           child: Text(

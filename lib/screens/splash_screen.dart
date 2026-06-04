@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../app/theme.dart';
 import '../providers/auth_provider.dart';
 import 'auth/login_screen.dart';
 import 'home/home_screen.dart';
+import 'onboarding/onboarding_screen.dart';
+import '../providers/user_provider.dart';
 
 /// Layar splash yang ditampilkan saat app pertama kali dibuka.
 ///
@@ -64,8 +67,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2500));
     if (!mounted) return;
 
-    // Gunakan auth provider (bukan akses langsung ke FirebaseAuth)
-    final user = ref.read(authStateProvider).value;
+    // Cek user yang tersimpan di Firebase Auth secara langsung
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (!mounted) return;
+
+    Widget nextScreen = const LoginScreen();
+
+    if (user != null) {
+      // Cek status onboarding di Firestore
+      final repo = ref.read(userRepositoryProvider);
+      final profile = await repo.getProfile(user.uid);
+      
+      final isOnboarded = profile != null && profile['isOnboarded'] == true;
+      if (isOnboarded) {
+        nextScreen = const HomeScreen();
+      } else {
+        nextScreen = const OnboardingScreen();
+      }
+    }
 
     if (!mounted) return;
     Navigator.pushReplacement(
@@ -74,7 +94,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         pageBuilder: (_, animation, secondaryAnimation) {
           return FadeTransition(
             opacity: animation,
-            child: user != null ? const HomeScreen() : const LoginScreen(),
+            child: nextScreen,
           );
         },
         transitionDuration: const Duration(milliseconds: 500),

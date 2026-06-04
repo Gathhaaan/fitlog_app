@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../app/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../home/home_screen.dart';
+import '../onboarding/onboarding_screen.dart';
+import '../../providers/user_provider.dart';
 import 'register_screen.dart';
 
 /// Layar login — pintu masuk utama ke aplikasi.
@@ -77,10 +79,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             _emailController.text.trim(),
             _passwordController.text.trim(),
           );
-      if (mounted) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && mounted) {
+        final repo = ref.read(userRepositoryProvider);
+        final profile = await repo.getProfile(user.uid);
+        final isOnboarded = profile != null && profile['isOnboarded'] == true;
+        
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (_) => isOnboarded ? const HomeScreen() : const OnboardingScreen(),
+          ),
         );
       }
     } catch (e) {
@@ -101,10 +110,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     setState(() => _isLoading = true);
     try {
       await ref.read(authRepositoryProvider).signInWithGoogle();
-      if (mounted) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && mounted) {
+        final repo = ref.read(userRepositoryProvider);
+        final profile = await repo.getProfile(user.uid);
+        final isOnboarded = profile != null && profile['isOnboarded'] == true;
+        
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (_) => isOnboarded ? const HomeScreen() : const OnboardingScreen(),
+          ),
         );
       }
     } catch (e) {

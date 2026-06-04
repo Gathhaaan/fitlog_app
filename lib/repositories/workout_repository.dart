@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/workout_model.dart';
 
 /// Repository untuk operasi CRUD workout di Firestore.
@@ -34,8 +35,37 @@ class WorkoutRepository {
         .where('userId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList());
+        .map((snapshot) {
+      final workouts = snapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
+      // Cache data secara lokal ke Hive (Offline-First)
+      _cacheWorkouts(workouts);
+      return workouts;
+    });
+  }
+
+  /// Membaca data yang di-cache di Hive jika Firestore offline.
+  Future<List<Workout>> getCachedWorkouts() async {
+    try {
+      final box = Hive.box('settings');
+      final List<dynamic>? cachedData = box.get('workout_cache_list');
+      if (cachedData != null) {
+        return cachedData.map((e) => Workout.fromJson(Map<String, dynamic>.from(e))).toList();
+      }
+    } catch (e) {
+      // Abaikan error cache
+    }
+    return [];
+  }
+
+  /// Menyimpan backup ke Hive
+  void _cacheWorkouts(List<Workout> workouts) {
+    try {
+      final box = Hive.box('settings');
+      final mappedData = workouts.map((w) => w.toJson()).toList();
+      box.put('workout_cache_list', mappedData);
+    } catch (e) {
+      // Abaikan error
+    }
   }
 
   /// Membaca satu workout berdasarkan ID dokumen.

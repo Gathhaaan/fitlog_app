@@ -5,7 +5,11 @@ import '../../app/theme.dart';
 import '../../models/workout_model.dart';
 
 import '../../providers/workout_provider.dart';
+import '../../providers/measurement_provider.dart';
+import '../../models/body_measurement_model.dart';
 import '../../widgets/lottie_empty_state.dart';
+import 'add_measurement_screen.dart';
+import 'package:intl/intl.dart';
 
 /// Layar Progress — visualisasi data latihan pengguna.
 ///
@@ -32,51 +36,104 @@ class ProgressScreen extends ConsumerWidget {
           if (workouts.isEmpty) {
             return _buildEmptyState();
           }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // === Ringkasan Statistik ===
-                _buildSummaryCards(workouts),
-                const SizedBox(height: 24),
+          return RefreshIndicator(
+            onRefresh: () async {
+              // Dummy delay untuk visual pull-to-refresh
+              await Future.delayed(const Duration(milliseconds: 800));
+            },
+            color: AppColors.primary,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // === Ringkasan Statistik ===
+                  _buildSummaryCards(workouts),
+                  const SizedBox(height: 24),
 
-                // === Grafik Mingguan ===
-                const Text(
-                  'Aktivitas Mingguan',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  // === Grafik Mingguan ===
+                  const Text(
+                    'Aktivitas Mingguan',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Jumlah workout per hari minggu ini',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-                _buildWeeklyChart(workouts),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Jumlah workout per hari minggu ini',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildWeeklyChart(workouts),
+                  const SizedBox(height: 24),
 
-                // === Grafik Kategori ===
-                const Text(
-                  'Distribusi Kategori',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  // === Grafik Kategori ===
+                  const Text(
+                    'Distribusi Kategori',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Persebaran jenis latihan kamu',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-                _buildCategoryChart(workouts),
-                const SizedBox(height: 24),
-              ],
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Persebaran jenis latihan kamu',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildCategoryChart(workouts),
+                  const SizedBox(height: 32),
+
+                  // === Jurnal Fisik ===
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Jurnal Fisik',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Catatan berat badan & foto progres',
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          // Gunakan Future.microtask agar animasi ripple selesai
+                          // dan tidak memblokir main thread yang menyebabkan ANR
+                          Future.microtask(() {
+                            if (context.mounted) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AddMeasurementScreen(),
+                                ),
+                              );
+                            }
+                          });
+                        },
+                        icon: const Icon(Icons.add_circle, color: AppColors.primary, size: 32),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildMeasurementJournal(ref),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           );
         },
@@ -356,6 +413,128 @@ class ProgressScreen extends ConsumerWidget {
     return const LottieEmptyState(
       message: 'Belum ada data progress',
       subtitle: 'Mulai catat workout untuk melihat progress kamu!',
+    );
+  }
+
+  Widget _buildMeasurementJournal(WidgetRef ref) {
+    final measurementAsync = ref.watch(measurementStreamProvider);
+
+    return measurementAsync.when(
+      data: (measurements) {
+        if (measurements.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: AppDecorations.card(),
+            child: const Center(
+              child: Text(
+                'Belum ada catatan jurnal fisik.\nTambah catatan pertamamu!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: measurements.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final m = measurements[index];
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: AppDecorations.card(),
+              child: Row(
+                children: [
+                  if (m.photoUrl != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        m.photoUrl!,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 60,
+                          height: 60,
+                          color: Colors.grey.shade800,
+                          child: const Icon(Icons.broken_image, color: Colors.grey),
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade800,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.monitor_weight, color: Colors.grey),
+                    ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          DateFormat('dd MMM yyyy').format(m.createdAt),
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              '${m.weight.toStringAsFixed(1)} kg',
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            if (m.waistCirc != null) ...[
+                              const SizedBox(width: 8),
+                              const Text('|', style: TextStyle(color: AppColors.textSecondary)),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${m.waistCirc!.toStringAsFixed(1)} cm',
+                                style: const TextStyle(color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ],
+                        ),
+                        if (m.notes != null && m.notes!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            m.notes!,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ]
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      ),
+      error: (e, _) => Center(
+        child: Text('Error: $e', style: const TextStyle(color: AppColors.error)),
+      ),
     );
   }
 }
